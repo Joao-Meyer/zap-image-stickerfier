@@ -1,5 +1,8 @@
 # zap-image-stickerfier
 
+## based on:
+https://www.tabnews.com.br/victorharry/como-criar-um-bot-de-sticker-para-o-whatsapp
+
 ## usage
 * clone the repository
 * run on the terminal the command:
