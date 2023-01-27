@@ -3,8 +3,11 @@ const qrCode = require('qrcode-terminal');
 const { default: axios } = require('axios');
 
 const client = new Client();
-const IMAGE_TYPE = 'image/jpeg';
-const IMAGE_NAME = 'image.jpg';
+                   
+let fileMimetype = 'image/jpeg';
+let fileExtension = 'jpg';
+
+const ALLOWED_TYPES = ['image', 'video'];
 
 client.on('qr', qr => {
     qrCode.generate(qr, {small: true});
@@ -12,17 +15,17 @@ client.on('qr', qr => {
 
 client.on('ready', () => console.log('connected to a client'));
 
-client.on('message_create', async (message) => {
+client.on('message_create', (message) => {
     if (message.body.toLowerCase() === 'hello') {
         message.reply('arriégua!');
     } else {
         const command = message.body.toLowerCase().split(' ')[0];
 
-        const {to, from, fromMe} = message;
-
-        const sender = fromMe ? to : from;
-
         if (command === "/sticker") {
+            const {to, from, fromMe} = message;
+            
+            const sender = fromMe ? to : from;
+    
             console.log('generating sticker for', sender);
 
             generateSticker(message, sender);
@@ -31,7 +34,7 @@ client.on('message_create', async (message) => {
 });
 
 const generateSticker = (message, sender) => {    
-    if (message.type === 'image') {
+    if (ALLOWED_TYPES.includes(message.type)) {
         replyMediaWithSticker(message, sender);
     } else {
         replyUrlWithSticker(message, sender);
@@ -40,8 +43,21 @@ const generateSticker = (message, sender) => {
 
 const replyMediaWithSticker = async (message, sender) => {
     try {
-        const {data} = await message.downloadMedia();
+        const {data, mimetype} = await message.downloadMedia();
 
+        if (message.isGif) {
+            fileMimetype = `image/gif`;
+
+            fileExtension = 'gif';
+        } else {
+            fileMimetype = mimetype;
+            
+            fileExtension = 'jpg';
+        }
+
+        console.log('look:', mimetype, message.isGif);
+        console.log(fileExtension, fileMimetype);
+        
         const image = createMessageMedia(data);
 
         await client.sendMessage(sender, image, {sendMediaAsSticker: true});
@@ -67,7 +83,7 @@ const replyUrlWithSticker = async (message, sender) => {
 }
 
 const createMessageMedia = (data) => {
-    return new MessageMedia(IMAGE_TYPE, data, IMAGE_NAME);
+    return new MessageMedia(fileMimetype, data, `image.${fileExtension}`);
 }
 
 client.initialize();
